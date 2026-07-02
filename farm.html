@@ -3,174 +3,85 @@
 <head>
 <meta charset="UTF-8">
 <title>Ферма Oleg191919</title>
-<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#1a1a2e;color:#eee;font-family:sans-serif;text-align:center;padding:10px;min-height:100vh}
+body{background:#1a1a2e;color:#eee;font-family:sans-serif;text-align:center;padding:10px}
 .stats{font-size:15px;margin:2px}
-button{padding:12px 18px;font-size:14px;margin:3px;border:none;border-radius:8px;cursor:pointer;transition:0.2s}
-button:active{transform:scale(0.95)}
+button{padding:12px 18px;font-size:14px;margin:3px;border:none;border-radius:8px;cursor:pointer}
 .plant{background:#f1c40f;color:black}
 .sell{background:#e74c3c}
 .buy{background:#3498db;color:white}
-.donate{background:#e91e63;color:white;animation:pulse 2s infinite}
-@keyframes pulse{0%,100%{box-shadow:0 0 5px #e91e63}50%{box-shadow:0 0 20px #e91e63}}
+.donate{background:#e91e63;color:white}
 .upgrade{background:#2ecc71;color:white}
 .prestige{background:#e67e22;color:white}
-.achievement{background:#9b59b6;display:inline-block;padding:5px 10px;margin:3px;border-radius:5px;font-size:12px}
-.tab{display:inline-block;padding:10px 20px;background:#333;margin:2px;border-radius:5px;cursor:pointer}
-.tab.active{background:#e91e63}
-.tabcontent{display:none}
-.tabcontent.active{display:block}
 </style>
 </head>
 <body>
 <h1>Ферма Oleg191919</h1>
-<div>
-<span class="tab active" onclick="switchTab('game')">Игра</span>
-<span class="tab" onclick="switchTab('shop')">Магазин</span>
-<span class="tab" onclick="switchTab('achievements')">Достижения</span>
-</div>
-<div id="game" class="tabcontent active">
 <div class="stats">Монеты: <b id="coins">500</b></div>
 <div class="stats">Уровень: <b id="level">1</b> (XP: <b id="xp">0</b>/<b id="xpneed">100</b>)</div>
-<div class="stats">Пшеница: <b id="wheat">0</b> | Помидоры: <b id="tomato">0</b></div>
-<div class="stats">Огурцы: <b id="cucumber">0</b> | Клубника: <b id="berry">0</b> | Кукуруза: <b id="corn">0</b></div>
+<div class="stats">Пшеница: <b id="wheat">0</b> | Помидоры: <b id="tomato">0</b> | Огурцы: <b id="cucumber">0</b> | Клубника: <b id="berry">0</b> | Кукуруза: <b id="corn">0</b></div>
 <div class="stats">Яйца: <b id="eggs">0</b> | Молоко: <b id="milk">0</b> | Мясо: <b id="meat">0</b> | Шерсть: <b id="wool">0</b></div>
-<div class="stats">Действий: <b id="actions">0</b></div>
 <hr>
 <button class="plant" onclick="plant('wheat')">Пшеница (5)</button>
 <button class="plant" onclick="plant('tomato')">Помидоры (10)</button>
 <button class="plant" onclick="plant('cucumber')">Огурцы (8)</button>
 <button class="plant" onclick="plant('berry')">Клубника (15)</button>
 <button class="plant" onclick="plant('corn')">Кукуруза (12)</button>
-<button class="sell" onclick="sellAll()">Продать всё</button>
-<button class="donate" onclick="window.open('https://www.donationalerts.com/r/oleg191919','_blank')">Задонатить</button>
-<button class="prestige" onclick="prestige()">Престиж (сброс с бонусом)</button>
-</div>
-<div id="shop" class="tabcontent">
-<h2>Магазин</h2>
+<button class="sell" id="sellBtn" onclick="sellAll()">Продать всё</button>
+<br>
 <button class="buy" onclick="buyAnimal('chicken')">Курица (50)</button>
 <button class="buy" onclick="buyAnimal('cow')">Корова (200)</button>
 <button class="buy" onclick="buyAnimal('pig')">Свинья (500)</button>
 <button class="buy" onclick="buyAnimal('sheep')">Овца (300)</button>
 <button class="upgrade" onclick="buyUpgrade()">Улучшить цены (100)</button>
-</div>
-<div id="achievements" class="tabcontent">
-<h2>Достижения</h2>
-<div id="achList">Пока нет достижений.</div>
-</div>
 <script>
+var data = {coins:500,level:1,xp:0,xpneed:100,wheat:0,tomato:0,cucumber:0,berry:0,corn:0,eggs:0,milk:0,meat:0,wool:0,chickens:0,cows:0,pigs:0,sheep:0,actions:0,prices:{wheat:10,tomato:25,cucumber:20,berry:40,corn:30,egg:15,milk:50,meat:100,wool:80}};
 var sellLocked = false;
-var data = JSON.parse(localStorage.getItem("farmData")) || {
-  coins:500,level:1,xp:0,xpneed:100,
-  wheat:0,tomato:0,cucumber:0,berry:0,corn:0,
-  eggs:0,milk:0,meat:0,wool:0,
-  chickens:0,cows:0,pigs:0,sheep:0,actions:0,
-  prices:{wheat:10,tomato:25,cucumber:20,berry:40,corn:30,egg:15,milk:50,meat:100,wool:80},
-  achievements:{},lastBonus:null,prestigeCount:0
-};
-var today = new Date().toDateString();
-if(data.lastBonus !== today){
-  data.lastBonus = today;
-  data.coins += 100;
-  alert("Ежедневный бонус: +100 монет!");
-}
 function save(){localStorage.setItem("farmData",JSON.stringify(data))}
 function update(){
-  document.getElementById("coins").textContent=data.coins;
-  document.getElementById("level").textContent=data.level;
-  document.getElementById("xp").textContent=data.xp;
-  document.getElementById("xpneed").textContent=data.xpneed;
-  for(var k of ["wheat","tomato","cucumber","berry","corn","eggs","milk","meat","wool","chickens","cows","pigs","sheep","actions"]){
-    document.getElementById(k).textContent=data[k];
-  }
+  var ids = ["coins","level","xp","xpneed","wheat","tomato","cucumber","berry","corn","eggs","milk","meat","wool","chickens","cows","pigs","sheep","actions"];
+  for(var i=0; i<ids.length; i++) document.getElementById(ids[i]).textContent = data[ids[i]] || 0;
   save();
 }
-function addXP(n){data.xp+=n;if(data.xp>=data.xpneed){data.xp-=data.xpneed;data.level++;data.xpneed=Math.floor(data.xpneed*1.5);checkAchievements()}update()}
-function checkAchievements(){
-  var a=data.achievements;
-  if(data.level>=5&&!a.lvl5){a.lvl5=true;addAch("5 уровень!")}
-  if(data.level>=10&&!a.lvl10){a.lvl10=true;addAch("10 уровень!")}
-  if(data.coins>=1000&&!a.coins1k){a.coins1k=true;addAch("1000 монет!")}
-  if(data.coins>=10000&&!a.coins10k){a.coins10k=true;addAch("10000 монет!")}
-  if(data.actions>=100&&!a.act100){a.act100=true;addAch("100 действий!")}
-  if(data.chickens>=5&&!a.chick5){a.chick5=true;addAch("5 куриц!")}
-  if(data.cows>=3&&!a.cow3){a.cow3=true;addAch("3 коровы!")}
-  save();
-}
-function addAch(text){
-  var d=document.getElementById("achList");
-  if(d.textContent=="Пока нет достижений.")d.textContent="";
-  d.innerHTML+='<span class="achievement">'+text+'</span> ';
+function addXP(n){
+  data.xp += n;
+  if(data.xp >= data.xpneed){ data.xp -= data.xpneed; data.level++; data.xpneed = Math.floor(data.xpneed * 1.5); }
+  update();
 }
 function plant(type){
-  var cost={wheat:5,tomato:10,cucumber:8,berry:15,corn:12};
-  if(data.coins>=cost[type]){data.coins-=cost[type];setTimeout(function(){data[type]++;addXP(5)},2000);data.actions++;update()}
+  var cost = {wheat:5,tomato:10,cucumber:8,berry:15,corn:12};
+  if(data.coins >= cost[type]){ data.coins -= cost[type]; setTimeout(function(){ data[type]++; addXP(5); },2000); data.actions++; update(); }
 }
 function sellAll(){
   if(sellLocked) return;
   sellLocked = true;
-  var total=0;
+  var total = 0;
   var items = ["wheat","tomato","cucumber","berry","corn","eggs","milk","meat","wool"];
   for(var i=0; i<items.length; i++){
     var k = items[i];
-    total += data[k] * (data.prices[k] || 0);
+    total += (data[k] || 0) * (data.prices[k] || 0);
     data[k] = 0;
   }
   data.coins += total;
   data.actions++;
   addXP(10);
   update();
-  setTimeout(function(){ sellLocked = false; }, 500);
+  setTimeout(function(){ sellLocked = false; }, 1000);
 }
 function buyAnimal(type){
-  var cost={chicken:50,cow:200,pig:500,sheep:300};
-  if(data.coins>=cost[type]){
-    data.coins-=cost[type];
-    data[type+"s"]++;
-    data.actions++;update();
-    var prod={
-      chicken:function(){setInterval(function(){data.eggs++;update()},5000)},
-      cow:function(){setInterval(function(){data.milk++;update()},8000)},
-      pig:function(){setInterval(function(){data.meat++;update()},12000)},
-      sheep:function(){setInterval(function(){data.wool++;update()},10000)}
-    };
-    prod[type]();
+  var cost = {chicken:50,cow:200,pig:500,sheep:300};
+  if(data.coins >= cost[type]){
+    data.coins -= cost[type]; data[type+"s"]++; data.actions++; update();
+    var interval = {chicken:5000,cow:8000,pig:12000,sheep:10000};
+    var resource = {chicken:"eggs",cow:"milk",pig:"meat",sheep:"wool"};
+    setInterval(function(){ data[resource[type]]++; update(); }, interval[type]);
   }
 }
 function buyUpgrade(){
-  if(data.coins>=100){data.coins-=100;for(var k in data.prices)data.prices[k]=Math.floor(data.prices[k]*1.2);data.actions++;update()}
+  if(data.coins >= 100){ data.coins -= 100; for(var k in data.prices) data.prices[k] = Math.floor(data.prices[k] * 1.2); data.actions++; update(); }
 }
-function prestige(){
-  if(data.level>=5){
-    data.prestigeCount++;
-    var bonus = data.prestigeCount * 0.1 + 1;
-    data = {
-      coins:Math.floor(500 * bonus),level:1,xp:0,xpneed:100,
-      wheat:0,tomato:0,cucumber:0,berry:0,corn:0,
-      eggs:0,milk:0,meat:0,wool:0,
-      chickens:0,cows:0,pigs:0,sheep:0,actions:0,
-      prices:{wheat:10,tomato:25,cucumber:20,berry:40,corn:30,egg:15,milk:50,meat:100,wool:80},
-      achievements:{},lastBonus:data.lastBonus,prestigeCount:data.prestigeCount
-    };
-    alert("Престиж! Бонус: x"+bonus.toFixed(1));
-    update();
-  } else {
-    alert("Нужен 5 уровень!");
-  }
-}
-function switchTab(tab){
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.tabcontent').forEach(t=>t.classList.remove('active'));
-  document.getElementById(tab).classList.add('active');
-  document.querySelector('.tab[onclick*="'+tab+'"]').classList.add('active');
-}
-if(data.chickens>0)for(var i=0;i<data.chickens;i++)setInterval(function(){data.eggs++;update()},5000);
-if(data.cows>0)for(var i=0;i<data.cows;i++)setInterval(function(){data.milk++;update()},8000);
-if(data.pigs>0)for(var i=0;i<data.pigs;i++)setInterval(function(){data.meat++;update()},12000);
-if(data.sheep>0)for(var i=0;i<data.sheep;i++)setInterval(function(){data.wool++;update()},10000);
-update();checkAchievements();
+update();
 </script>
 </body>
 </html>
