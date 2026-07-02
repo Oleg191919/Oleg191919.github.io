@@ -2,86 +2,70 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Ферма Oleg191919</title>
+<title>Ферма с зумом</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{background:#1a1a2e;color:#eee;font-family:sans-serif;text-align:center;padding:10px}
-.stats{font-size:15px;margin:2px}
-button{padding:12px 18px;font-size:14px;margin:3px;border:none;border-radius:8px;cursor:pointer}
-.plant{background:#f1c40f;color:black}
-.sell{background:#e74c3c}
-.buy{background:#3498db;color:white}
-.donate{background:#e91e63;color:white}
-.upgrade{background:#2ecc71;color:white}
-.prestige{background:#e67e22;color:white}
+*{margin:0;padding:0;overflow:hidden}
+canvas{background:#2d5a1e;display:block}
 </style>
 </head>
 <body>
-<h1>Ферма Oleg191919</h1>
-<div class="stats">Монеты: <b id="coins">500</b></div>
-<div class="stats">Уровень: <b id="level">1</b> (XP: <b id="xp">0</b>/<b id="xpneed">100</b>)</div>
-<div class="stats">Пшеница: <b id="wheat">0</b> | Помидоры: <b id="tomato">0</b> | Огурцы: <b id="cucumber">0</b> | Клубника: <b id="berry">0</b> | Кукуруза: <b id="corn">0</b></div>
-<div class="stats">Яйца: <b id="eggs">0</b> | Молоко: <b id="milk">0</b> | Мясо: <b id="meat">0</b> | Шерсть: <b id="wool">0</b></div>
-<hr>
-<button class="plant" onclick="plant('wheat')">Пшеница (5)</button>
-<button class="plant" onclick="plant('tomato')">Помидоры (10)</button>
-<button class="plant" onclick="plant('cucumber')">Огурцы (8)</button>
-<button class="plant" onclick="plant('berry')">Клубника (15)</button>
-<button class="plant" onclick="plant('corn')">Кукуруза (12)</button>
-<button class="sell" id="sellBtn" onclick="sellAll()">Продать всё</button>
-<br>
-<button class="buy" onclick="buyAnimal('chicken')">Курица (50)</button>
-<button class="buy" onclick="buyAnimal('cow')">Корова (200)</button>
-<button class="buy" onclick="buyAnimal('pig')">Свинья (500)</button>
-<button class="buy" onclick="buyAnimal('sheep')">Овца (300)</button>
-<button class="upgrade" onclick="buyUpgrade()">Улучшить цены (100)</button>
+<canvas id="c"></canvas>
 <script>
-var data = {coins:500,level:1,xp:0,xpneed:100,wheat:0,tomato:0,cucumber:0,berry:0,corn:0,eggs:0,milk:0,meat:0,wool:0,chickens:0,cows:0,pigs:0,sheep:0,actions:0,prices:{wheat:10,tomato:25,cucumber:20,berry:40,corn:30,egg:15,milk:50,meat:100,wool:80}};
-var sellLocked = false;
-function save(){localStorage.setItem("farmData",JSON.stringify(data))}
-function update(){
-  var ids = ["coins","level","xp","xpneed","wheat","tomato","cucumber","berry","corn","eggs","milk","meat","wool","chickens","cows","pigs","sheep","actions"];
-  for(var i=0; i<ids.length; i++) document.getElementById(ids[i]).textContent = data[ids[i]] || 0;
-  save();
-}
-function addXP(n){
-  data.xp += n;
-  if(data.xp >= data.xpneed){ data.xp -= data.xpneed; data.level++; data.xpneed = Math.floor(data.xpneed * 1.5); }
-  update();
-}
-function plant(type){
-  var cost = {wheat:5,tomato:10,cucumber:8,berry:15,corn:12};
-  if(data.coins >= cost[type]){ data.coins -= cost[type]; setTimeout(function(){ data[type]++; addXP(5); },2000); data.actions++; update(); }
-}
-function sellAll(){
-  if(sellLocked) return;
-  sellLocked = true;
-  var total = 0;
-  var items = ["wheat","tomato","cucumber","berry","corn","eggs","milk","meat","wool"];
-  for(var i=0; i<items.length; i++){
-    var k = items[i];
-    total += (data[k] || 0) * (data.prices[k] || 0);
-    data[k] = 0;
+var c=document.getElementById("c"),ctx=c.getContext("2d");
+c.width=window.innerWidth;c.height=window.innerHeight;
+
+// Камера
+var cam={x:0,y:0,zoom:1};
+var dragging=false,lastX=0,lastY=0;
+
+// Поле
+var tiles=[],animals=[];
+for(var i=0;i<10;i++)for(var j=0;j<10;j++)tiles.push({x:i*80,y:j*80,crop:Math.random()>0.5?"wheat":"",stage:Math.random()*3});
+for(var i=0;i<3;i++)animals.push({x:Math.random()*800,y:Math.random()*800,type:"chicken",dx:Math.random()*2-1,dy:Math.random()*2-1});
+
+// Зум колёсиком
+c.addEventListener("wheel",function(e){e.preventDefault();cam.zoom*=e.deltaY>0?0.9:1.1;});
+// Drag мышкой
+c.addEventListener("mousedown",function(e){dragging=true;lastX=e.clientX;lastY=e.clientY;});
+c.addEventListener("mouseup",function(){dragging=false;});
+c.addEventListener("mousemove",function(e){if(dragging){cam.x+=(e.clientX-lastX)/cam.zoom;cam.y+=(e.clientY-lastY)/cam.zoom;lastX=e.clientX;lastY=e.clientY;}});
+// Drag пальцем
+c.addEventListener("touchstart",function(e){dragging=true;lastX=e.touches[0].clientX;lastY=e.touches[0].clientY;});
+c.addEventListener("touchend",function(){dragging=false;});
+c.addEventListener("touchmove",function(e){if(dragging){cam.x+=(e.touches[0].clientX-lastX)/cam.zoom;cam.y+=(e.touches[0].clientY-lastY)/cam.zoom;lastX=e.touches[0].clientX;lastY=e.touches[0].clientY;}});
+
+function draw(){
+  ctx.clearRect(0,0,c.width,c.height);
+  ctx.save();
+  ctx.translate(c.width/2,c.height/2);
+  ctx.scale(cam.zoom,cam.zoom);
+  ctx.translate(-cam.x,-cam.y);
+  // Трава
+  ctx.fillStyle="#3a7a1e";
+  ctx.fillRect(0,0,800,800);
+  // Грядки
+  for(var t of tiles){
+    ctx.fillStyle="#8B4513";
+    ctx.fillRect(t.x,t.y,70,70);
+    if(t.crop){
+      ctx.fillStyle=t.stage<1?"#4CAF50":t.stage<2?"#388E3C":"#FFD700";
+      ctx.fillRect(t.x+15,t.y+15,40,40);
+    }
   }
-  data.coins += total;
-  data.actions++;
-  addXP(10);
-  update();
-  setTimeout(function(){ sellLocked = false; }, 1000);
-}
-function buyAnimal(type){
-  var cost = {chicken:50,cow:200,pig:500,sheep:300};
-  if(data.coins >= cost[type]){
-    data.coins -= cost[type]; data[type+"s"]++; data.actions++; update();
-    var interval = {chicken:5000,cow:8000,pig:12000,sheep:10000};
-    var resource = {chicken:"eggs",cow:"milk",pig:"meat",sheep:"wool"};
-    setInterval(function(){ data[resource[type]]++; update(); }, interval[type]);
+  // Животные
+  for(var a of animals){
+    a.x+=a.dx;a.y+=a.dy;
+    if(a.x<0||a.x>800)a.dx*=-1;
+    if(a.y<0||a.y>800)a.dy*=-1;
+    ctx.fillStyle=a.type=="chicken"?"#fff":"#8B4513";
+    ctx.fillRect(a.x,a.y,20,20);
+    ctx.fillText(a.type,a.x,a.y-5);
   }
+  ctx.restore();
+  requestAnimationFrame(draw);
 }
-function buyUpgrade(){
-  if(data.coins >= 100){ data.coins -= 100; for(var k in data.prices) data.prices[k] = Math.floor(data.prices[k] * 1.2); data.actions++; update(); }
-}
-update();
+draw();
 </script>
 </body>
 </html>
